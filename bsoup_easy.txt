@@ -1,0 +1,55 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu May 23 12:51:45 2019
+
+@author: dfb
+"""
+
+import bs4 as bs
+import urllib.request
+
+#source = urllib.request.urlopen('https://pythonprogramming.net/parsememcparseface/').read()
+source = urllib.request.urlopen('https://en.wikipedia.org/wiki/List_of_Asian_countries_by_area').read()
+soup = bs.BeautifulSoup(source,'lxml')
+
+My_table = soup.find('table',{'class':'wikitable sortable'})
+links = My_table.findAll('a')
+#print(links)
+
+Countries = []
+for link in links:
+    Countries.append(link.get('title'))
+    
+#print(Countries)
+
+import pandas as pd
+df = pd.DataFrame()
+df['Country'] = Countries
+print(df)
+
+# title of the page
+#print(soup.title)
+
+# get attributes:
+#print(soup.title.name)
+
+# get values:
+#print(soup.title.string)
+
+# beginning navigation:
+#print(soup.title.parent.name)
+
+# getting specific values:
+#print(soup.p)
+
+#print(soup.find_all('p'))
+
+#for paragraph in soup.find_all('p'):
+#    print(paragraph.string)
+#    print(str(paragraph.text))
+
+#for url in soup.find_all('a'):
+#    print(url.get('href'))
+
+#print(soup.get_text())
+

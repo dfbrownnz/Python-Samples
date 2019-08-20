@@ -1,0 +1,61 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jul 17 14:03:28 2019
+
+@author: dfb
+"""
+import pandas as pd
+import os
+
+
+df_err = pd.read_csv('CA Audit Results 071019.xlsx_Fixes.csv')
+#print(df_err['Field Name']) 
+
+DIR = r'C:/Users/dfb/Desktop/Tab/AuditTracking/Test Compare/'
+lclSheetName='RawDataTable'
+
+XlFileName = 'CA Audit Results 071019.xlsx'
+
+#filename = os.path.expanduser('~') + '\Desktop\input.txt'
+FileNameOut = DIR  + XlFileName + '_FixesAuditor.csv'
+try:
+    os.remove(FileNameOut)
+except OSError:
+    print( 'Bang')
+    pass
+#f1 = open(FileNameOut, 'a')
+df3 = pd.DataFrame()
+xlFile = pd.ExcelFile(DIR  + XlFileName)
+for SheetName in xlFile.sheet_names : 
+    #print('<XlsFileName>' + XlFileName +  '<SheetName>' + SheetName)
+    if SheetName==lclSheetName:
+        df = pd.read_excel(xlFile , SheetName)
+        df.dropna(subset=['Policy Number'] , inplace=True)
+        df.columns = df.columns.str.lstrip()
+        #df.dropna(inplace=True)
+        #print( df['Auditor'])
+        #FieldName = df_err['Field Name']
+        for index_errors, row_errors in df_err.iterrows():
+            #print( str(index_errors) + '<>' + str(row_errors['Field Name']) + '<>' + str(row_errors['Field Value']) )
+            FieldName = str(row_errors['Field Name'])
+            FieldValue  = str(row_errors['Field Value'])
+            #FieldName = 'Start Date'
+            #FieldValue  = '05/15/019' #'Error Value'
+            df_aud = df.where( df[FieldName ].astype(str) == FieldValue )
+            
+            #print(FieldName + '<>' + FieldValue)
+            #str(df_aud['Co Name'])  + ',' +
+            df_aud_small = df_aud[['Policy Number', 'Auditor'] ]
+            df_aud_small['FieldName'] = FieldName
+            df_aud_small['FieldValue'] = FieldValue
+            df_aud_small.dropna(inplace=True)
+            df3 = pd.concat( [ df3 , df_aud_small ])
+            #print(df_aud_small.head(20))
+            #df3 = df_aud_small.append(df3)
+            #if index_errors==0:
+        df3.to_csv(FileNameOut , mode='a', header=True , index=False)
+            #else:
+            #    df_aud_small.to_csv(FileNameOut , mode='a', header=False , index=False)
+        df3 = pd.read_csv(FileNameOut )
+          
+

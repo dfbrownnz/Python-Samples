@@ -1,0 +1,134 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu May 23 12:54:49 2019
+
+@author: dfb
+"""
+
+import bs4 as bs
+import urllib.request
+
+#source = urllib.request.urlopen('https://pythonprogramming.net/parsememcparseface/').read()
+#url = "C:/Users/dfb/Desktop/VIN_1M8TRMPA7YP061018.html"
+#url = "C:\Users\dfb\Desktop\VIN_1M8TRMPA7YP061018.html"
+#source = urllib.request.urlopen('file:///C:/Users/dfb/Desktop/VIN_1M8TRMPA7YP061018.html').read()
+#url = 'https://vpic.nhtsa.dot.gov/decoder/Decoder'
+#if url.startswith('https'):
+#    source = urllib.request.urlopen(url).read()
+#else:
+#    source = open(url)
+
+source = urllib.request.urlopen('https://vpic.nhtsa.dot.gov/decoder/Decoder').read()
+soup = bs.BeautifulSoup(source,'lxml')
+#mydivs = soup.findAll("div", {"class": "col-md-6"})
+
+#for each_div in soup.findAll('div',{'class':'col-md-6'}):
+#for each_div in soup.findAll('div',{'class':'row'}):
+#    print (each_div)
+
+#mydivs = soup.findAll('div')
+#for div in mydivs:
+#    if "class" in div:
+#        if (div["class"]=="col-md-6"):
+#            print (div    )
+#        else:
+#            print (div    )
+            
+            
+import requests
+#import json
+url = 'https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVINValuesBatch/'
+#post_fields = {'format': 'json', 'data':'3GNDA13D76S000000;5XYKT3A12CG000000'}
+#r = requests.post(url, data=post_fields)
+#print(r.text)		
+
+#import requests,json;
+url = 'https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMakeId/440?format=json';
+#r = requests.get(url);
+#print(r.text);	
+
+
+
+#table = soup.find('body')
+#table_rows = table.find_all('div')#
+#for tr in table_rows:
+#    td = tr.find_all('class')
+#    row = [i.text for i in td]
+#    print(row)
+
+#import pandas as pd
+
+#dfs = pd.read_html('https://pythonprogramming.net/parsememcparseface/',header=0)
+#for df in dfs:
+#    print(df)
+
+#import bs4 as bs
+#import urllib.request
+
+#source = urllib.request.urlopen('https://vpic.nhtsa.dot.gov/decoder/Decoder').read()
+#soup = bs.BeautifulSoup(source,'xml')
+#for url in soup.find_all('div'):
+#    print(url.text)
+
+#for url in soup.find_all('loc'):
+#    print(url.text)
+
+
+#https://vpic.nhtsa.dot.gov/decoder/Decoder
+#1M8TRMPA7YP061018
+
+#import pandas as pd
+
+
+
+from bs4 import BeautifulSoup
+#page = """<div class="abcabcd13"></div>  
+#          <div class="abcabcd74"></div>  
+#          <div class="abcabcd123"></div>  """
+          
+page = """<div class="col-md-6">
+                    <p><label> Manufacturer: </label> <a href="/decoder/Manufacturer/Details/1126" target="_blank">MOTOR COACH INDUSTRIES, INC. </a></p>
+                    <p><label> Vehicle Type: </label> BUS</p>
+                    <p><label> Model Year: </label> <span id="decodedModelYear">2000</span></p>
+                    <p><label> Make: </label> <span id="decodedMake">MOTOR COACH INDUSTRIES</span></p>
+                    <p><label> Model: </label> <span id="decodedModel">102EL3 Intercity/E4500</span></p>
+                    <p><label> Body Class: </label> Bus</p>
+                    <p>
+                                <input type="submit" name="FullReport" class="btn btn-info" id="btnFullReport" value="Show All Vehicle Details" /><span>&nbsp;</span>
+                    </p>
+                </div>"""          
+#soup = BeautifulSoup(page, 'lxml')
+#divs = soup.findAll("div")
+#classes = []
+#for y in divs:
+#    classes.append(y["class"])
+#print(classes)
+
+#import urllib2
+#from bs4 import BeautifulSoup
+import pandas as pd
+import time
+
+query='https://en.wikipedia.org/wiki/List_of_United_States_cities_by_population'
+
+r = requests.get(query)
+soup = BeautifulSoup(r.content)
+	#
+tbl = soup.find_all('table')[3]
+df = pd.read_html(str(tbl))[0]
+	#
+df.columns = df.iloc[0]
+	#
+print('hey now')
+
+cities = df['City'].tolist()
+print(df.head(5))
+	#
+for city in cities:
+    i = city.find('[')
+    if i != -1:
+        city = city[0:i]
+        city + ' ' + query
+        print(city)
+        #populate.query_and_post(city)
+        time.sleep(1) 

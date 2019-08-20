@@ -1,0 +1,33 @@
+from scipy import stats
+
+female_doctor_bps = [128, 127, 118, 115, 144, 142, 133, 140, 132, 131, 
+                     111, 132, 149, 122, 139, 119, 136, 129, 126, 128]
+male_consultant_bps = [118, 115, 112, 120, 124, 130, 123, 110, 120, 121,
+                      123, 125, 129, 130, 112, 117, 119, 120, 123, 128]
+print( str( stats.ttest_1samp(female_doctor_bps, 120) ) )
+print( str(stats.ttest_ind(female_doctor_bps, male_consultant_bps) ) )
+
+import numpy as np
+from scipy import stats
+import matplotlib
+import matplotlib.pyplot as plt
+#%matplotlib inline
+matplotlib.style.use('ggplot')
+
+np.random.seed(1)
+data = np.round(np.random.normal(5, 2, 100))
+plt.hist(data, bins=10, range=(0,10), edgecolor='black')
+plt.show()
+
+mean = np.mean(data)
+print( 'Mean:' +  str(mean))
+print( 'Np Mean:' +  str(np.median(data)))
+
+mode = stats.mode(data)
+print( 'Mode:' +  str( mode ))
+print("The modal value is {} with a count of {}".format(mode.mode[0], mode.count[0]))
+print( '\nThe range is simply calculated as the maximum value – minimum value: point to point:' +  str(np.ptp(data)))
+print( '\nVariance is a measure of how variable the data is: Variance:' +  str(np.var(data)))
+print( '\nThe variance can get very large for large data sets and so we will often use the standard deviation, which is the square root of the variance:Std:' +  str(np.std(data)))
+print( '\nThe standard error of the mean (SE of the mean) estimates the variability between sample means that you would obtain if you took multiple samples from the same population. \n The standard error of the mean estimates the variability between samples \n whereas \n the standard deviation measures the variability within a single sample.\n:' + str(stats.sem(data)))
+

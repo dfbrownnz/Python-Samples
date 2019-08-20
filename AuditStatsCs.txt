@@ -1,0 +1,54 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jul 11 09:49:49 2019
+
+@author: dfb
+"""
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+DIR = r'G:/Audit/Projects/data/AuditStats/'
+XlFileName = 'CA-AuditTemplate.xlsm'
+xlFile = pd.ExcelFile(DIR  + XlFileName)
+for SheetName in xlFile.sheet_names : 
+    print('<XlsFileName>' + XlFileName +  '<SheetName>' + SheetName)
+    if SheetName=='Sheet1':
+        df = pd.read_excel(xlFile , SheetName)
+
+if df.empty == False:
+    #print(list(df))
+    #print(df.head(3))
+    #print(df[ 'Days to Complete Audit'])
+    
+    df['Date Finalized'] = pd.to_datetime(df['Date Finalized'])
+    df['Company Letter Sent'] = pd.to_datetime(df['Company Letter Sent'])
+    df['Days between Policy Review Begins and Company Letter Sent'] = pd.to_numeric(df['Days between Policy Review Begins and Company Letter Sent'])
+    df.rename( columns={'Days between Policy Review Begins and Company Letter Sent': "Letter and Review"} , inplace=True)
+    df['Days in Audit'] = ( df['Date Finalized'] - df['Company Letter Sent']  ).dt.days 
+   
+    sns.set_style("darkgrid")
+    sns.lineplot(x='Insureds Name', y='Days in Audit', data=df[['Insureds Name','Days in Audit' ]] , label="Days in Audit", linestyle='dashed')
+    sns.lineplot(x='Insureds Name', y='Letter and Review', data=df[['Insureds Name','Letter and Review' ]] , label="Days From Letter to Review" , marker='o')
+    #Rotate Name 70 deg
+    #Remove Name 
+    axis_font = {'fontname':'Arial', 'size':'6'}
+    plt.xlabel('', multialignment='center')
+    plt.ylabel('' , axis_font)
+
+    plt.xticks(rotation=70, fontname = "Arial" , fontsize=8)
+    #plt.show()
+    #from matplotlib.pyplot import figure
+    #figure(num=None, figsize=(8, 6), dpi=80, facecolor='w', edgecolor='k')
+    #plt.figure(figsize=(80,40))
+    fig = plt.gcf()
+    
+    #plt.savefig(DIR + 'DaysInAudit.png')
+    #This is a good size but takes up a page
+    #fig.set_size_inches(18.5, 10.5)
+    fig.set_size_inches(4.5, 2.5)
+    fig.savefig(DIR + 'DaysInAudit.png', dpi=100, bbox_inches="tight" , ext='png')
+else:
+    print('Couldnt find Sheet one in :' + DIR  + XlFileName)    

@@ -1,0 +1,23 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu May 23 13:56:57 2019
+
+@author: dfb
+"""
+import requests
+website_url = requests.get('https://en.wikipedia.org/wiki/List_of_Asian_countries_by_area').text
+
+
+from bs4 import BeautifulSoup
+soup = BeautifulSoup(website_url,'lxml')
+print(soup.prettify())
+
+
+import bs4 as bs
+import urllib.request
+
+source = urllib.request.urlopen('https://pythonprogramming.net/parsememcparseface/').read()
+soup = bs.BeautifulSoup(source,'lxml')
+# title of the page
+print(soup.title)
+

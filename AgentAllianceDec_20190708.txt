@@ -1,0 +1,105 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jul  8 13:23:56 2019
+
+@author: dfb
+"""
+import re 
+
+class MvrToCsv:
+    
+    Templdf = ""#pd.DataFrame()
+    TemplRow =0
+    DataRow =0
+    DataCol =0
+    DataListOfLines =[]
+    DataCurrentLine =''
+    DataListOfFields=[]
+    DocumentKey =''
+    GroupKey =''
+    
+    def __init__(self,  FilePath, FileNameData, FileNameTemplate):
+        self.FilePath = FilePath
+        self.FileNameData = FileNameData
+        self.FileNameTemplate = FileNameTemplate
+
+    def print_to_file_overwrite(cls):
+        file2 = open(cls.FilePath + cls.FileNameData + '_Audit.csv',"w+")
+        file2.write( 'Policy Number| Term| FieldName | FieldValue \n' )
+        file2.close()
+
+    def print_to_file(cls, data):
+        file2 = open(cls.FilePath + cls.FileNameData + '_Audit.csv',"a+")
+        data_new = re.sub(r'[^\x00-\x7f]',r'', data) # Remove non ascii chars
+        
+        data_new += "\n"
+        file2.write(data_new )
+        file2.close()
+
+    def data_loadRow(cls, RowNum):
+        if RowNum > len(cls.DataListOfLines):
+            print( 'The Row you want ' + str(RowNum) + "<bigger than the rows in the file>"+ len(cls.DataListOfLines ))
+        else:
+            cls.DataCurrentLine =cls.DataListOfLines[RowNum]
+       
+    def data_GetDrivingHeader(cls, sRecord):
+        RecDict = {'Driver Name:': [0, 21, 'bob'] ,'Silver Renewal Of Policy:': [0, 14, 'bob'] , 'Account:':[0,8,'bbo'] , 'Term:':[0,22,'bbo']  , 'Current License Class:':[0,16,'bbo']  , 'License Status:':[0,10,'bbo']  , 'Select Cession Status:':[0,10,'bbo'] , 'Current License Exp Date: ':[0,10,'bbo'] , 'Current License Issue Date: ':[0,10,'bbo'] }
+        for FieldName, FieldPos in sorted(RecDict.items()):
+            match = re.search( FieldName , sRecord )
+            Field =""
+            if match != None:
+                Field =   sRecord[match.end() : ( match.end() + FieldPos[1])]
+                FieldPos[2] = Field
+        cls.DocumentKey =""
+        for FieldName, FieldPos in sorted(RecDict.items()):
+            if FieldName=='Silver Renewal Of Policy:' or FieldName=='Term:':
+                cls.DocumentKey +=  str(FieldPos[2] ) + '|'
+        for FieldName, FieldPos in sorted(RecDict.items()):
+            if FieldName!='Silver Renewal Of Policy:' or FieldName!='Term:':
+                #print( cls.DocumentKey   + str(FieldName)  + '|' + str(FieldPos[2] ))
+                cls.print_to_file( cls.DocumentKey   + str(FieldName)  + '|' + str(FieldPos[2] ))
+                  
+
+    def data_GetDrivingRecords(cls, sRecord, iRecord):
+        RecDict = {'Suspension Date:': [0, 10, 'bob'] , 'State Violation Code:':[0,4,'bbo'] , 'DMV Points:':[0,2,'bbo']  , 'Driving Record Description:':[0,40,'bbo']   }
+        PrintThis = False
+        if PrintThis==True:
+            for key, value in sorted(RecDict.items()):
+                print ( key, value[0] , value[1] )
+
+        for FieldName, FieldPos in sorted(RecDict.items()):
+            #print(FieldName, FieldPos[0] , FieldPos[1] )
+            #for iField,FieldName in enumerate(TmplGroupNamesDrivingRec):
+            match = re.search( FieldName , sRecord )
+            Field =""
+            if match != None:
+                Field =   sRecord[match.end() : ( match.end() + FieldPos[1])]
+                #print(TmplGroupNamesDrivingRec[iField] + '<>' + str(yo) + '<>' + DrivingRecords[iRecord] + '\n\n')
+                #print( cls.DocumentKey + '<RecordNum:>' +  str(iRecord) + '<FieldName>' + FieldName + '<FieldValue>' + str(Field) )
+                cls.print_to_file( cls.DocumentKey +  FieldName  + '_' + str(iRecord)  + '|' + str(Field) )
+
+    def data_loadTest(cls):
+        cls.print_to_file_overwrite()
+       
+        with open(cls.FilePath + cls.FileNameData, 'r') as reader:
+            dataOld = reader.read()
+            DrivingRecordStart =  dataOld.find('Driving Record')
+            cls.data_GetDrivingHeader( dataOld[ 0 : dataOld.find('Previous License Issue Date:') ] )
+            
+            DrivingRecordEnd =  dataOld.find('Personal Information')
+            DrivingRecord = dataOld[ DrivingRecordStart : DrivingRecordEnd ]
+            DrivingRecords = DrivingRecord.split('Type')
+            for iRecord , sRecord in enumerate(DrivingRecords):
+                cls.data_GetDrivingRecords( sRecord , iRecord)
+
+#import os
+import sys
+#os.system("type AgentAllianceDec_20190708.py")
+print ("Directory:", sys.argv[1])
+print ("FileNameData:", sys.argv[2])
+print ("Number of arguments: ", len(sys.argv))
+print ("The arguments are: " , str(sys.argv))
+
+
+polToC = MvrToCsv( sys.argv[1], sys.argv[2], '')
+polToC.data_loadTest()

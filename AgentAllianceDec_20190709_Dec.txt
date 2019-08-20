@@ -1,0 +1,174 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jul  8 13:23:56 2019
+
+@author: dfb
+"""
+import re 
+
+class MvrToCsv:
+    
+    Templdf = ""#pd.DataFrame()
+    TemplRow =0
+    DataRow =0
+    DataCol =0
+    DataListOfLines =[]
+    DataCurrentLine =''
+    DataListOfFields=[]
+    DocumentKey =''
+    GroupKey =''
+    
+    def __init__(self,  FilePath, FileNameData, FileNameTemplate):
+        self.FilePath = FilePath
+        self.FileNameData = FileNameData
+        self.FileNameTemplate = FileNameTemplate
+        self.data_loadTest()
+
+    def print_to_file_overwrite(cls):
+        file2 = open(cls.FilePath + cls.FileNameData + '_Audit.csv',"w+")
+        file2.write( 'Policy Number| Term| FieldName | FieldValue \n' )
+        file2.close()
+
+    def print_to_file(cls, data):
+        file2 = open(cls.FilePath + cls.FileNameData + '_Audit.csv',"a+")
+        data_new = re.sub(r'[^\x00-\x7f]',r'', data) # Remove non ascii chars
+        
+        data_new += "\n"
+        file2.write(data_new )
+        file2.close()
+
+    def data_loadRow(cls, RowNum):
+        if RowNum > len(cls.DataListOfLines):
+            print( 'The Row you want ' + str(RowNum) + "<bigger than the rows in the file>"+ len(cls.DataListOfLines ))
+        else:
+            cls.DataCurrentLine =cls.DataListOfLines[RowNum]
+       
+    def data_GetDrivingHeader(cls, sRecord):
+        print('data_GetDrivingHeader' + sRecord)
+        RecDict = {'Named Insured:': [0, 21, ''] ,'Policy Number: ': [0, 10, ''] , 'Date of Notice:':[0,10,''] , 'Policy Period: ':[0,23,'']  , 'Current License Class:':[0,16,'']  , 'License Status:':[0,10,'']  , 'Select Cession Status:':[0,10,''] , 'Current License Exp Date: ':[0,10,''] , 'Current License Issue Date: ':[0,10,''] }
+        for FieldName, FieldPos in sorted(RecDict.items()):
+            match = re.search( FieldName , sRecord )
+            Field =""
+            if match != None:
+                Field =   sRecord[match.end() : ( match.end() + FieldPos[1])]
+                FieldPos[2] = Field
+        cls.DocumentKey =""
+        for FieldName, FieldPos in sorted(RecDict.items()):
+            if FieldName=='Policy Number: ' or FieldName=='Policy Period: ':
+                cls.DocumentKey +=  str(FieldPos[2] ) + '|'
+        for FieldName, FieldPos in sorted(RecDict.items()):
+            if FieldName!='Policy Number: ' or FieldName!='Policy Period: ':
+                #print( cls.DocumentKey   + str(FieldName)  + '|' + str(FieldPos[2] ))
+                cls.print_to_file( cls.DocumentKey   + str(FieldName)  + '|' + str(FieldPos[2] ))
+                  
+    def data_GetHeader(cls, sRecord):
+       
+        sRecord = re.sub(r'\n',r'', sRecord) # Remove non ascii chars
+        sRecord = sRecord.replace('PO Box 3199 ? Winston Salem, NC 27102-3199 ','')
+        sRecord = sRecord.replace('Date of Notice','')
+        cls.DocumentKey = sRecord[ 15 : sRecord.find('Named Insured:') -13  ]  + '|'  + sRecord[ sRecord.find('Policy Period:')  +25 : len(sRecord) ] + '|' + sRecord[ 25 : sRecord.find('Named Insured:') -1  ]  + '|'
+       
+        cls.print_to_file( cls.DocumentKey   +  'Name Insured:|' +  sRecord[sRecord.find('Named Insured:')  + 17  : sRecord.find('Policy Period:')  ] )
+
+    def data_GetHouseResidentsRecords(cls, sRecord, iRecord):
+        ResidentName = sRecord[ 0 : sRecord.find('Driver Status License Lic. State Date of Birth Gender Marital Status Driver Pts Yrs. Licensed') ]
+        ResidentInfo = sRecord[ sRecord.find('Driver Status License Lic. State Date of Birth Gender Marital Status Driver Pts Yrs. Licensed') +95  : len( sRecord ) ]
+        
+        #print( 'data_GetHouseResidentsRecords:ResidentName'   +  '<>' + ResidentName) #+ cls.DocumentKey
+        ResidentInfo = re.sub(r'\n',r'', ResidentInfo) # Remove non ascii chars
+        if len(ResidentInfo) <32: # len of Drivers and Household Residents
+            return 
+        #print( 'data_GetHouseResidentsRecords:ResidentInfo'   +  '<>' + ResidentInfo) #+ cls.DocumentKey
+        ResidentLabel = ['Insured Type','Insured Type','DriverLicenseNo','LicenseState','DOB','Gender','MartialStatus','YearsLicensed','Points','','','','','','','']
+        ResidentInfoArray = ResidentInfo.split(' ')
+        cls.print_to_file( cls.DocumentKey +  "Resident"  + ' ' + str(iRecord)  + ' Name|' + ResidentName    )
+        if sRecord.find('Title Purposes') > 1:
+            cls.print_to_file( cls.DocumentKey +  "Resident"  + ' ' + str(iRecord) + '_All' + '_ResidentInfo|' + ResidentInfo    )
+            return
+        
+        bPrintThis = False
+        sFieldPrint = ''
+        
+        for  iField , sField in enumerate(ResidentInfoArray):
+            bPrintThis = False
+            
+            if (iField < (len(ResidentInfoArray) -3)) and (iField > 2):
+                bPrintThis = True
+            else:
+                bPrintThis = False
+            
+            if bPrintThis == True:
+                if iField==3:
+                    sFieldPrint = sField + ' ' 
+                elif iField==4:
+                    sFieldPrint = sField + ' '  + sFieldPrint
+                    #print( 'data_GetHouseResidentsRecords' + str(iField ) + '<>'  + ResidentLabel[iField-3] + '<>'+ sFieldPrint)
+                    cls.print_to_file( cls.DocumentKey +  "Resident"  + '_' + str(iRecord)  + ' ResidentInfo '  + ResidentLabel[iField-3] + '|' + sFieldPrint    )
+                else:
+                    sFieldPrint = sField
+                    cls.print_to_file( cls.DocumentKey +  "Resident"  + '_' + str(iRecord)  + ' ResidentInfo '  + ResidentLabel[iField-3] + '|' + sFieldPrint    )
+            #print( 'data_GetHouseResidentsRecords'   + '<>'  + str(iField)  + '<>'+ sField)
+            iField += 1
+                #print( 'ResidentLabel[' + str(iField-3) + ']' )
+            
+    #Last Field is Garaging Location: and the value is a 5 char ZIP Code
+    def data_GetVehicleRecords(cls, sRecord, iRecord):
+        Vehicle = sRecord
+        #print(sRecord + '\n\n')
+        import pandas as pd
+        df = pd.read_csv('DecTemplate.csv')
+        for index, row in df.iterrows():
+            #print( str(row['FieldNameIn'] ) + ""  + '|' + Vehicle[  Vehicle.rfind(  str(row['FieldNameOut'] ) ) + int(row['FieldStart'] ) : Vehicle.rfind(  str(row['FieldPrior'] ) )  + int(row['FieldEnd'])  ]  )
+            cls.print_to_file( cls.DocumentKey +  "Vehicle "+  str(iRecord)   + " "  + str(row['FieldNameOut'] ) + ""  + '|' + Vehicle[  Vehicle.find(  str(row['FieldNameIn'] ) ) + int(row['FieldStart'] ) : Vehicle.find(  str(row['FieldNameNext'] ) )  + int(row['FieldEnd'])  ]  )
+            #if str(row['FieldNameIn'] )  =='Premium Bodily Injury':
+            #    print( str(Vehicle.rfind(  str(row['FieldNameOut'] )) ) + '-' + str(Vehicle.find(  str(row['FieldNameNext'] ) )) )
+
+    def data_loadTest(cls):
+        cls.print_to_file_overwrite()
+       
+        with open(cls.FilePath + cls.FileNameData, 'r') as reader:
+            dataOld = reader.read()
+
+            
+            cls.data_GetHeader( dataOld[ 0 : dataOld.find('Policy Underwritten By:') ] )
+            DrivingRecordStart =  dataOld.find('Insured Vehicle')
+            DrivingRecordEnd =  dataOld.find('Combined Vehicle Premium')
+            DrivingRecord = dataOld[ DrivingRecordStart : DrivingRecordEnd ]
+            DrivingRecords = DrivingRecord.split('#')
+            #DrivingRecords = DrivingRecord.split('Coverages Provided Limits')
+                                                 
+            for iRecord , sRecord in enumerate(DrivingRecords):
+                if iRecord!=0:
+                    cls.data_GetVehicleRecords( sRecord , iRecord)
+                #print(sRecord + '\n\n')
+            ResidentRecStart =  dataOld.find('Drivers and Household Residents')
+            ResidentRecEnd =  dataOld.find('Insured Vehicle')
+            ResidentRec = dataOld[ ResidentRecStart : ResidentRecEnd ]
+            ResidentRec = ResidentRec.replace("Driver Status License # Lic. State","Driver Status License Lic. State")
+            ResidentRec = ResidentRec.split('#')
+            for iRecord , sRecord in enumerate(ResidentRec):
+                cls.data_GetHouseResidentsRecords( sRecord , iRecord)
+
+#import os
+#import sys
+#os.system("type AgentAllianceDec_20190708.py")
+#print ("Directory:", sys.argv[1])
+#print ("FileNameData:", sys.argv[2])
+#print ("Number of arguments: ", len(sys.argv))
+#print ("The arguments are: " , str(sys.argv))
+
+# See AgentAllianceDec_20190708_Dec.py
+#polToC = MvrToCsv( "C:/Users/dfb/Desktop/Example1/pyAuditToText/AuditToText/Agent Alliance/txt/dec/" , "2002303841 - 20180228 Dec Page.txt", '')
+#polToC = MvrToCsv( "C:/Users/dfb/Desktop/Example1/pyAuditToText/AuditToText/Agent Alliance/txt/dec/" , "2002306866 - 20180301 Dec Page.txt", '')
+
+#AgentAllianceDec_20190709_Dec.py
+polToC = MvrToCsv( "C:/Users/dfb/Desktop/Example1/pyAuditToText/AuditToText/Agent Alliance/txt/dec/" , "2002203830 - Dec Page.txt", '')  
+polToC = MvrToCsv( "C:/Users/dfb/Desktop/Example1/pyAuditToText/AuditToText/Agent Alliance/txt/dec/" , "2002306866 - 20180312 Dec Page.txt", '')  
+polToC = MvrToCsv( "C:/Users/dfb/Desktop/Example1/pyAuditToText/AuditToText/Agent Alliance/txt/dec/" , "2002306866 - 20180301 Dec Page.txt", '')  
+polToC = MvrToCsv( "C:/Users/dfb/Desktop/Example1/pyAuditToText/AuditToText/Agent Alliance/txt/dec/" , "2002303854 - Dec Page.txt", '')  
+polToC = MvrToCsv( "C:/Users/dfb/Desktop/Example1/pyAuditToText/AuditToText/Agent Alliance/txt/dec/" , "2002303841 - 20180703 Dec Page.txt", '')  
+polToC = MvrToCsv( "C:/Users/dfb/Desktop/Example1/pyAuditToText/AuditToText/Agent Alliance/txt/dec/" , "2002303841 - 20180531 Dec Page.txt", '')  
+polToC = MvrToCsv( "C:/Users/dfb/Desktop/Example1/pyAuditToText/AuditToText/Agent Alliance/txt/dec/" , "2002303841 - 20180404 Dec Page.txt", '')  
+polToC = MvrToCsv( "C:/Users/dfb/Desktop/Example1/pyAuditToText/AuditToText/Agent Alliance/txt/dec/" , "2002143668 - Dec Page.txt", '')  
+#
+              

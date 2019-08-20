@@ -1,0 +1,103 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jun  5 15:17:58 2019
+
+@author: dfb
+"""
+
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jun  3 09:46:49 2019
+
+@author: dfb
+"""
+
+#file:///C:/Users/dfb/Desktop/StandardManual.txt
+#f = open("StandardManual.txt", "r",encoding='ISO-8859-1')
+#f = open("StandardManual.txt", "r",encoding='utf8')
+#print(f.readline())
+#f.close()
+import re
+import sys  
+import pandas as pd
+#import numpy as np
+
+## different class
+
+#from CoverSheetTemplate import PrintObject
+import CoverSheetTemplate 
+    
+def print_to_file(data):
+    #file2 = open(r"MyFile2.txt","w+") 
+    file2 = open(r"ALsBusAudit.csv","a+") 
+    file2.write(data)
+    file2.close()
+def get_template_to_dict(FilePath , FileNameTemplate):
+#FilePath ='C:/Users/dfb/Desktop/Example1/pyAuditToText/AuditToText/'
+#FileName ='Template.csv'
+    df = pd.read_csv(FilePath + FileNameTemplate )
+    PolicyFields = df.to_dict()
+    print(df.head(0))
+    print(PolicyFields['FieldNameIn'] )
+
+
+
+    
+def print_words(filename):
+    file2 = open(r"ALsBusAudit.csv","w+") 
+    file2.write('')
+    file2.close()
+
+    CoverSheetTemplate.PrintObject('C:/Users/dfb/Desktop/Example1/pyAuditToText/AuditToText/','a.csv')
+    
+    
+    with open(filename, 'r') as reader:
+        dataOld = reader.read().replace('\n', '')
+        list = [',', '!', '.', ';', '"','\"','\t',' ']
+        dataY = dataOld.translate({ord(x): '' for x in list})
+        data = dataY.lower()
+        #print_to_file(data)
+        #PolicyFields =	{  "PolicyEffectiveDate": "" ,  "EndorsementNo": "" ,  "THEINSUREDADDRESSHASBEENCHANGEDFROM:": "",  "NAMEHASBEENCHANGEDFROM:": "" ,  "DateofCancellation:": ""} #
+        PolicyFields ={}
+        PolicyFields["dateofcancellation:"] =	["Not Found",  "10"] #{"": "10"} #
+        PolicyFields["theinsuredaddresshasbeenchangedfrom:"] =	["Not Found", "60"] #
+        PolicyFields["namehasbeenchangedfrom:"] =	["Not Found", "39"] #
+        PolicyFields["endorsementno"] =	["Not Found", "3"] #
+        PolicyFields["policyeffectivedate:"] =	["Not Found", "10"] #
+        PolicyFields["corpeffectivedate:"] =	["Not Found", "10"] #Company name is before endorsementeffective date
+        PolicyFields["policynumber:"] =	["Not Found", "8"] #thereasonforcancellationis
+        PolicyFields["thereasonforcancellationis"] =	["Not Found", "20"] #
+        PolicyFields["noticeofcancellationofinsurance"] =	["Not Found", "20"] #
+        PolicyFields["dave"] =	["Not Found", "20"] #
+
+        #for match in re.finditer('THEINSUREDADDRESSHASBEENCHANGEDFROM:', data):
+        #    PolicyFields["THEINSUREDADDRESSHASBEENCHANGEDFROM:"] =  data[match.end() : ( match.end() + 60 ) ] #102
+        
+        for PolicyKeys, PolicyValues in PolicyFields.items():
+            for match in re.finditer( PolicyKeys , data):
+                PolicyFields[PolicyKeys][0] =   data[match.end() : ( match.end() + int(PolicyFields[PolicyKeys][1]) )]
+                #print( data[match.end() : ( match.end() + int(PolicyFields[PolicyKeys][1]) ) ]  ) 
+
+        for PolicyKeys, PolicyValues in PolicyFields.items():
+            print_to_file(PolicyKeys + ',' +  PolicyFields[PolicyKeys][0]  + '\n' )
+        reader.close()
+
+def main():
+  if len(sys.argv) != 3:
+    print ( 'usage: PolicyReader.py --count FileNameInDoubleQuotes' ) 
+    sys.exit(1)
+  option = sys.argv[1]
+  filename = sys.argv[2]
+  get_template_to_dict('C:/Users/dfb/Desktop/Example1/pyAuditToText/AuditToText/','Template.csv')
+  
+  if option == '--count':
+    print_words(filename)
+  else:
+    print ( 'unknown option: ' + option ) 
+    
+    
+    sys.exit(1)
+
+if __name__ == '__main__':
+  main()
+  

@@ -1,0 +1,42 @@
+
+#help("modules")
+
+thistuple = ("apple", "banana", "cherry")
+for x in thistuple:
+    print(x)
+
+thistuple = ("apple", "banana", "cherry")
+if "apple" in thistuple:
+    print( "Yes, apple is in the fruits tuple" )
+    
+#ac = "D01132  06124 1904190419101904               111  0000000012000                 1 61B220123"
+#D01132  06124 1904190419101904               111  0000000012000                 1 61B220123                             
+#D01132  06124 1904190419101904               113  000000000875{                 1 61B220123                             
+#D01132  06124 1904181219061904               111  0000000021340                 1 61B309322                             
+#D01132  06124 1904181219061904               113  0000000017680                 1 61B309322                             
+#ac = "D01132  06124 1904190419101904               111  0000000023840                 1 61B353602                             "
+
+
+str = "hello world!"
+splitat = 5
+#l, r = str[:splitat], str[splitat:]
+
+#print( ":ID:" + ac[0:1] + ":", ":Account:" + ac[1:4] , ":Company:" + ac[7:13] + ":" , ":COVERAGE CODE:" + ac[44:46] + ":" , ":Amount divide by 100:" + ac[51:80] + ":" , ":Policy:" + ac[82:101] + ":")
+n=1
+#print( [ac[i:i+n] for i in range(0, len(ac), n)] ) 
+#for i in range(0, len(ac), n):
+#    if i > 0: 
+#         print ('A:' + ac[i:i+n]  )
+#    elif i >5 or i<18 :
+#         print ('B:' + ac[i:i+n]  )
+    #else:
+    #    print ('Y:' + ac[i:i+n])
+f = open(r"C:\Users\dfb\Desktop\Example1\ftpFiles\32A061240419_050719160713_accounting.txt", "r")
+for ac in f:
+  #print(x) #J=neg
+  if ac[82:101]  == "61B865220":
+      print( ":ID:" + ac[0:1] + ":", ":Account:" + ac[1:4] , ":Company:" + ac[7:13] + ":" , ":COVERAGE CODE:" + ac[44:46] + ":" , ":J:" + ac[64:66] + ":"  , ":Amount divide by 100:" + ac[50:62] + ":" , ":Policy:" + ac[82:101] + ":")
+  
+f.close()
+
+

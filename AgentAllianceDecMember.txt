@@ -1,0 +1,201 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jul  8 11:21:16 2019
+
+@author: dfb
+"""
+
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jun 19 13:03:15 2019
+
+@author: dfb
+"""
+import pandas as pd
+import re 
+
+class MvrToCsv:
+    
+    Templdf = ""#pd.DataFrame()
+    TempldfSub = pd.DataFrame()
+    TemplRow =0
+    DataRow =0
+    DataCol =0
+    DataListOfLines =[]
+    DataCurrentLine =''
+    DataListOfFields=[]
+    DocumentKey =''
+    GroupKey =''
+    
+    def __init__(self,  FilePath, FileNameData, FileNameTemplate):
+        self.FilePath = FilePath
+        self.FileNameData = FileNameData
+        self.FileNameTemplate = FileNameTemplate
+
+    def print_to_file_overwrite(cls):
+        file2 = open(cls.FilePath + cls.FileNameData + '_AuditB.csv',"w+")
+        file2.write( 'Policy Number, FieldName , FieldValue \n' )
+        file2.close()
+
+    def clean_data(cls, data):
+        list = [ '!',  ';', '"','\"','\t',',','{','}']
+        dataY = data.translate({ord(x): '' for x in list})
+        data = dataY.lstrip()
+        return data
+    def print_to_file(cls, data):
+        file2 = open(cls.FilePath + cls.FileNameData+ '_AuditB.csv',"w+")
+        data_new = re.sub(r'[^\x00-\x7f]',r'', data) # Remove non ascii chars
+        
+        data_new += "\n"
+        file2.write(data_new )
+        file2.close()
+
+    #Load a CSV file as a Template
+    def get_template_group(cls ):
+        
+        df = pd.read_csv(cls.FilePath + cls.FileNameTemplate )
+        cls.dfTemplate  = df.loc[df['FieldIsAGroupOrMember'] == 'Group']
+
+    def template_member(cls, section_name):
+        #print('template_member(cls, section_name):' + section_name + "<>" + cls.DataCurrentLine)
+        df = pd.read_csv(cls.FilePath + cls.FileNameTemplate )
+        df1 = df.loc[ df['FieldIsAGroupOrMember'] == section_name ]
+        cls.DataCol = 0
+        if len(cls.DataCurrentLine) > 0:
+            cls.DataListOfFields = cls.DataCurrentLine.split(',')
+            #print( str(cls.DataCurrentLine.split(',')))
+            sVal = cls.DataCurrentLine.split(',')
+            #print( sVal[1]  + '<>' + sVal[4] + '<>'+ sVal[6] + '<>'+ sVal[8] + '<>'+ sVal[12] + '<>'+ sVal[14] )
+            for index, row in df1.iterrows():
+                #print(row['FieldNameIn'], row['FieldLength'] , sVal[ int(row['FieldLength']) ]  )
+                #Make sure the number of fields available is greater than fields requested
+                if (int(row['FieldLength']) < len(sVal)) and (len(sVal[ int(row['FieldLength']) ]) >1 ):
+                    #print(row['FieldNameIn']  + '<>' +   sVal[ int(row['FieldLength']) ]  )
+                    #print( cls.DocumentKey + '|' + cls.GroupKey + '|' + str( row['FieldNameIn'])  + '|' +  sVal[ int(row['FieldLength']) ].lstrip()   )
+                    cls.print_to_file( cls.DocumentKey + '|' + cls.GroupKey + '|' + str( row['FieldNameIn'])  + '|' +  sVal[ int(row['FieldLength']) ].lstrip()   )
+            #for match in re.finditer( row['FieldNameIn']  , cls.DataCurrentLine):a
+            #    fValue =   cls.DataCurrentLine[match.end() : ( match.end() + int(row['FieldLength']) )]
+            #    print(row['FieldNameIn'], row['FieldLength'] , fValue)
+
+    def data_loadRow(cls, RowNum):
+        if RowNum > len(cls.DataListOfLines):
+            print( 'The Row you want ' + str(RowNum) + "<bigger than the rows in the file>"+ len(cls.DataListOfLines ))
+        else:
+            cls.DataCurrentLine =cls.DataListOfLines[RowNum]
+       
+        
+    def data_loadTest(cls):
+        cls.print_to_file_overwrite()
+        with open(cls.FilePath + cls.FileNameData, 'r') as reader:
+            #dataOld = reader.read().replace('\n', '')
+            dataOld = reader.read()
+            #list = [',', '!', '.', ';', '"','\"','\t',' '] #Remove spaces
+            list = [ '!',  ';', '"','\"','\t']
+            dataY = dataOld.translate({ord(x): '' for x in list})
+            data = dataY.lower()
+            cls.DataListOfLines = data.split('\n')
+            RowNumberLocal=0
+            reader.close()
+        iKeyLevel = 1
+        while iKeyLevel < 3:
+                
+            #For each row in the data file
+            #Once for Document Keys
+            #Again for other fields
+            while RowNumberLocal < len(cls.DataListOfLines):
+                cls.data_loadRow(RowNumberLocal)
+                RowNumberLocal = RowNumberLocal +1 
+                #print ( cls.DataCurrentLine )
+                fValue = ''
+                df = pd.read_csv(cls.FilePath + cls.FileNameTemplate )
+                dfTemplate  = df.loc[df['FieldIsAGroupOrMember'] == 'Group']
+    
+                #TempldfSub  = df.loc[df['FieldIsAGroupOrMember'] == 'Vehicle Identification Number']
+                #print( str(TempldfSub) )
+                inFieldLen = 0 
+                boolHasMembers = False
+                
+    
+                # For each Row in the Temlate for Groups
+                for RowInTemplate, FieldNameInLoop in enumerate(dfTemplate['FieldNameIn']):
+                    #print( 'N:' + dfTemplate['FieldNameIn'].tolist()[RowInTemplate]  + '<Key>' + dfTemplate['Key Field'].tolist()[RowInTemplate]  + '<DataLine:>' + str(RowNumberLocal) + '<TemplRow>' + str(RowInTemplate ))
+
+                    inFieldLen = int(dfTemplate['FieldLength'].tolist()[RowInTemplate] )
+                    if dfTemplate['HasMembers'].tolist()[RowInTemplate]  =='Y':
+                        boolHasMembers = True
+                    else:
+                        boolHasMembers = False
+                    FieldNameInLoop = FieldNameInLoop.lower()
+    
+                    #cls.print_to_file(  FieldNameInLoop.lower() + '<>' + cls.DataCurrentLine.lower()) 
+                    for match in re.finditer( FieldNameInLoop  , cls.DataCurrentLine):
+                        #print( '<FieldNameTempl>' +  str(FieldNameInLoop) +'<Line>'+ str(cls.DataCurrentLine)   ) #+ str(CounterInLoop )
+
+                        
+                        Startingcharacter = 0
+                        if RowInTemplate< len(dfTemplate['Startingcharacter']):
+                            Startingcharacter = int( dfTemplate['Startingcharacter'].tolist()[RowInTemplate]  )
+                            
+                        EndingCharacter = 0
+                        EndingCharacter = ( match.end() + int(inFieldLen) )
+                        #if RowNumberLocal == 17 :
+                        #    print( 'str(RowNumberLocal)  == 17:'  + cls.DataCurrentLine ) 
+                        if EndingCharacter > len(cls.DataCurrentLine):
+                            EndingCharacter = len(cls.DataCurrentLine)
+                        if Startingcharacter > 0:
+                            fValue =   cls.DataCurrentLine[ Startingcharacter : EndingCharacter ]
+                        else:
+                            fValue =   cls.DataCurrentLine[match.end() : EndingCharacter ]
+    
+                        #print( fValue + '<>' + df.loc[df.FieldNameIn == 'policy period:','Row Search'].tolist()[0] )
+                        #print( 'N:' + dfTemplate['FieldNameIn'].tolist()[RowInTemplate]  + '<Key>' + dfTemplate['Key Field'].tolist()[RowInTemplate]  + '<DataLine:>' + str(RowNumberLocal) + '<TemplRow>' + str(RowInTemplate ) + '<>' + fValue)
+                        
+                        #cls.print_to_file( 'N:' + dfTemplate['FieldNameIn'].tolist()[RowInTemplate]  + '<Key>' + dfTemplate['Key Field'].tolist()[RowInTemplate]  + '<DataLine:>' + str(RowNumberLocal) + '<TemplRow>' + str(RowInTemplate ) + '<>' + fValue)
+                        
+                        if (iKeyLevel == 1) and (dfTemplate['Key Field'].tolist()[RowInTemplate]  =='Document Key'):
+                            cls.DocumentKey =    "" + fValue  + ","  + cls.DocumentKey  
+
+                        if (iKeyLevel == 1) and (dfTemplate['Key Field'].tolist()[RowInTemplate]  =='Group Key'):
+                            cls.GroupKey =   cls.GroupKey  + "," + fValue
+                            print( 'N:' + dfTemplate['FieldNameIn'].tolist()[RowInTemplate]  + '<Key>' + dfTemplate['Key Field'].tolist()[RowInTemplate]  + '<DataLine:>' + str(RowNumberLocal) + '<TemplRow>' + str(RowInTemplate ) + '<>' + fValue)
+
+                        
+                        #if dfTemplate['FieldNameIn'] == 'policy period:':
+                        #    print( dfTemplate['FieldNameIn'] + '' + dfTemplate['Row Search']   ) 
+                            
+                        LclRowNum = 1
+                        LclRowNumMax = 5
+                        
+                        if (boolHasMembers == True): # and (iKeyLevel == 2):
+                            if FieldNameInLoop == 'vehicle identification number':
+                                RowNumberLocal = RowNumberLocal +0
+                            else:
+                                RowNumberLocal = RowNumberLocal +2
+                            for LclRowNum  in range(LclRowNumMax):
+                                #print("correct" + str(LclRowNum) )
+                                cls.data_loadRow(RowNumberLocal)
+                                print( 'N:<Group>' + dfTemplate['FieldNameIn'].tolist()[RowInTemplate]  + '<Key>' + dfTemplate['Key Field'].tolist()[RowInTemplate]  + '<RowNumberLocal>' + str(RowNumberLocal) + '<RowInTemplate>' + str(RowInTemplate ) + '<fValue>' + fValue)
+                                cls.template_member(FieldNameInLoop)
+                                print(FieldNameInLoop + '< Has  Members>'  + str(RowNumberLocal)  )
+                                RowNumberLocal+=1
+                                #LclRowNum+= 1
+                                next 
+    
+                        else:
+                            #print(FieldNameInLoop + '<>' + fValue)
+                            if (iKeyLevel == 2) and (dfTemplate['Key Field'].tolist()[RowInTemplate] != 'Document Key') :
+                                #cls.print_to_file(  'iKeyLevel:Name' + FieldNameInLoop + '<Field>' + fValue + '<KeyLevel>' + str(iKeyLevel)) 
+                                cls.print_to_file(  cls.DocumentKey  + FieldNameInLoop + ',' + cls.clean_data( fValue)  ) 
+                                #dfTemplate['FieldNameOut'].tolist()[RowInTemplate] 
+                        RowInTemplate += 1     
+            #print ('Key Level' + str(iKeyLevel)   + '<Rownum>' + str(RowNumberLocal))
+            iKeyLevel = iKeyLevel +1
+            RowNumberLocal = 0
+            cls.GroupKey=""
+  
+
+#polToC = PolicyToCsv('C:/Users/dfb/Desktop/Example1/pyAuditToText/AuditToText/','Vehicle Schedule 2018-2019.csv','Vehicle ScheduleTemplate.csv')
+            
+polToC = MvrToCsv('C:/Users/dfb/Desktop/Example1/pyAuditToText/AuditToText/Agent Alliance/txt/dec/','2002306866 - 20180312 Dec Page.txt','agentalliance_dec_Template.csv')
+polToC.data_loadTest()
+
